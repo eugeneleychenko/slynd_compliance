@@ -39,7 +39,6 @@ def get_1996_yankees_lineup():
     Step 2: Cross-reference the content with the FDA's list of Do's and Don'ts.
     Step 3: Ensure the language aligns with the client's On Brand use cases and phrases.
     Step 4: Verify that the claims made in the post are within the Branded and Allowable Claims from the Slynd handbook.
-    Step 4b: Make sure that the IRI is matches
     Step 5: Lastly, before providing your final feedback, take into account any Rule Exceptions that may apply.
     Step 6: Provide a detailed assessment of the post's compliance.
     Let's think step by step
