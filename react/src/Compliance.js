@@ -85,12 +85,19 @@ const ComplianceChecker = () => {
     },
   ];
 
-  const [complianceResult, setComplianceResult] = useState([]);
+  const [complianceResult, setComplianceResult] = useState({});
   const [compliancePercentage, setCompliancePercentage] = useState(0);
   const [showComplianceResults, setShowComplianceResults] = useState(false);
+  const [fdaDoChanged, setFdaDoChanged] = useState(false);
+  const [fdaDontChanged, setFdaDontChanged] = useState(false);
+  const [onBrandClaimsChanged, setOnBrandClaimsChanged] = useState(false);
+  const [section1Changed, setSection1Changed] = useState(false);
+  const [section2Changed, setSection2Changed] = useState(false);
+  const [section3Changed, setSection3Changed] = useState(false);
+  const [ruleExceptionsChanged, setRuleExceptionsChanged] = useState(false);
 
   useEffect(() => {
-    setCompliancePercentage(checked.length / samplecomplianceResult.length);
+    setCompliancePercentage(checked.length / complianceResult.length);
   }, [checked]);
 
   const handleCheckComplianceClick = () => {
@@ -104,25 +111,27 @@ const ComplianceChecker = () => {
   };
 
   const handleDrawerToggle = () => {
-    setSidebarOpen(!sidebarOpen);
+    setSidebarOpen((prevSidebarOpen) => !prevSidebarOpen);
   };
 
-  const handleToggle = (value) => () => {
-    const currentIndex = checked.indexOf(value.id);
+  const handleToggle = (nonCompliantStatement) => () => {
+    console.log("Toggling statement:", nonCompliantStatement);
+    console.log("Current checked state before toggle:", checked);
+    const currentIndex = checked.indexOf(nonCompliantStatement);
     const newChecked = [...checked];
 
     if (currentIndex === -1) {
-      newChecked.push(value.id);
+      newChecked.push(nonCompliantStatement);
     } else {
       newChecked.splice(currentIndex, 1);
     }
 
     setChecked(newChecked);
-    // setCompliancePercentage(calculateCompliancePercentage());
+    console.log("New checked state after toggle:", newChecked);
   };
 
   const calculateCompliancePercentage = () => {
-    return checked.length / samplecomplianceResult.length;
+    return checked.length / complianceResult.length;
   };
 
   useEffect(() => {
@@ -136,10 +145,12 @@ const ComplianceChecker = () => {
   }, []);
 
   const applyExceptions = () => {
-    const idsToCheck = samplecomplianceResult
-      .filter((result) => result.checked === 1)
-      .map((result) => result.id);
-    setChecked(idsToCheck);
+    const idsToCheck = complianceResult.results
+      .filter((result) => result.exceptions === 1)
+      .map((result) => result.non_compliant_statement);
+    // Add idsToCheck to the existing checked array without overwriting
+    const newChecked = [...new Set([...checked, ...idsToCheck])];
+    setChecked(newChecked);
   };
 
   const handlePostSelectionChange = (event) => {
@@ -192,19 +203,84 @@ const ComplianceChecker = () => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const result = await response.text();
+      const result = await response.json();
       console.log("result", result);
+      console.log("Type of result:", typeof result);
 
-      // Split the result into lines and filter out empty lines
-      const issues = result.split("\n").filter((line) => line.trim() !== "");
-      console.log("issues", issues);
-      // Map the issues to an array of objects with an id and non_compliant_statement
-
-      setComplianceResult(issues);
+      setComplianceResult(result);
+      console.log("Type of complianceResult:", typeof complianceResult);
     } catch (error) {
       console.error("There was an error!", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Add handlers to set the changed state to true when the TextField content changes
+  const handleFdaDoChange = (event) => {
+    setFDA_DoState(event.target.value);
+    setFdaDoChanged(true);
+  };
+
+  const handleFdaDontChange = (event) => {
+    setFDA_DontState(event.target.value);
+    setFdaDontChanged(true);
+  };
+
+  const handleOnBrandClaimsChange = (event) => {
+    setOnBrandClaimsState(event.target.value);
+    setOnBrandClaimsChanged(true);
+  };
+
+  const handleSection1Change = (event) => {
+    setSection1State(event.target.value);
+    setSection1Changed(true);
+  };
+
+  const handleSection2Change = (event) => {
+    setSection2State(event.target.value);
+    setSection2Changed(true);
+  };
+
+  const handleSection3Change = (event) => {
+    setSection3State(event.target.value);
+    setSection3Changed(true);
+  };
+
+  const handleRuleExceptionsChange = (event) => {
+    setRuleExceptionsState(event.target.value);
+    setRuleExceptionsChanged(true);
+  };
+
+  // Add a generic save function (you'll need to implement the actual save logic)
+  const saveChanges = (field) => {
+    // Implement save logic here
+    console.log(`Saving changes for ${field}`);
+    // Reset the changed state to false after saving
+    switch (field) {
+      case "FDA_Do":
+        setFdaDoChanged(false);
+        break;
+      case "FDA_Dont":
+        setFdaDontChanged(false);
+        break;
+      case "OnBrandClaims":
+        setOnBrandClaimsChanged(false);
+        break;
+      case "Section1":
+        setSection1Changed(false);
+        break;
+      case "Section2":
+        setSection2Changed(false);
+        break;
+      case "Section3":
+        setSection3Changed(false);
+        break;
+      case "RuleExceptions":
+        setRuleExceptionsChanged(false);
+        break;
+      default:
+        break;
     }
   };
 
@@ -426,23 +502,44 @@ const ComplianceChecker = () => {
 
   const rule_exceptions = `1. You are allowed to talk about the convenience of obtaining Slynd; wheter it's not needing to spend time at the pharmacy or not needing to take blood pressure tests. This is not considered a benefit and therefore doesn't need to have a referencing risk.`;
 
+  const [FDA_DoState, setFDA_DoState] = useState(FDA_Do); // Set default value to existing FDA_Do variable
+
+  // Define state and setter for FDA Dont's
+  const [FDA_DontState, setFDA_DontState] = useState(FDA_dont); // Set default value to existing FDA_dont variable
+
+  // Define state and setter for On Brand Claims
+  const [OnBrandClaimsState, setOnBrandClaimsState] = useState(on_brand_claims); // Set default value to existing on_brand_claims variable
+
+  // Define state and setter for Section 1
+  const [Section1State, setSection1State] = useState(s1); // Set default value to existing s1 variable
+
+  // Define state and setter for Section 2
+  const [Section2State, setSection2State] = useState(s2); // Set default value to existing s2 variable
+
+  // Define state and setter for Section 3
+  const [Section3State, setSection3State] = useState(s3); // Set default value to existing s3 variable
+
+  // Define state and setter for Rule Exceptions
+  const [RuleExceptionsState, setRuleExceptionsState] =
+    useState(rule_exceptions); // Set default value to existing rule_exceptions variable
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box sx={{ display: "flex", transition: "width 0.5s" }}>
       <Drawer
         variant="persistent"
         className="css-1n3eiey-MuiDrawer-docked"
         anchor="left"
         open={sidebarOpen}
         sx={{
-          width: "30%",
+          width: sidebarOpen ? "30%" : "0%",
           flexShrink: 0,
+          transition: "width 0.5s",
           "& .MuiDrawer-paper": {
-            width: "30%",
+            width: sidebarOpen ? "30%" : "0%",
             boxSizing: "border-box",
-            padding: " 0 20px",
+            padding: sidebarOpen ? " 0 20px" : "0",
+            transition: "width 0.5s, padding 0.5s",
           },
         }}
-        style={{ padding: " 0 20px" }}
       >
         <Typography variant="h5" style={{ margin: "20px 0" }}>
           Rules
@@ -456,7 +553,18 @@ const ComplianceChecker = () => {
           multiline
           rows={4}
           defaultValue={FDA_Do}
+          onChange={handleFdaDoChange}
         />
+        {fdaDoChanged && (
+          <Button
+            variant="contained"
+            onClick={() => saveChanges("FDA_Do")}
+            sx={{ width: "30%", ml: "auto", display: "block" }}
+          >
+            Save
+          </Button>
+        )}
+
         <TextField
           label="FDA Dont's"
           variant="outlined"
@@ -466,7 +574,17 @@ const ComplianceChecker = () => {
           multiline
           rows={4}
           defaultValue={FDA_dont}
+          onChange={handleFdaDontChange}
         />
+        {fdaDontChanged && (
+          <Button
+            variant="contained"
+            onClick={() => saveChanges("FDA_Dont")}
+            sx={{ width: "30%", ml: "auto", display: "block" }}
+          >
+            Save
+          </Button>
+        )}
         <TextField
           label="On Brand Claims"
           variant="outlined"
@@ -476,7 +594,17 @@ const ComplianceChecker = () => {
           multiline
           rows={4}
           defaultValue={on_brand_claims}
+          onChange={handleOnBrandClaimsChange}
         />
+        {onBrandClaimsChanged && (
+          <Button
+            variant="contained"
+            onClick={() => saveChanges("OnBrandClaims")}
+            sx={{ width: "30%", ml: "auto", display: "block" }}
+          >
+            Save
+          </Button>
+        )}
         <TextField
           label="Section 1 - Branded vs Unbranded "
           variant="outlined"
@@ -486,7 +614,17 @@ const ComplianceChecker = () => {
           multiline
           rows={4}
           defaultValue={s1}
+          onChange={handleSection1Change}
         />
+        {section1Changed && (
+          <Button
+            variant="contained"
+            onClick={() => saveChanges("Section1")}
+            sx={{ width: "30%", ml: "auto", display: "block" }}
+          >
+            Save
+          </Button>
+        )}
         <TextField
           label="Section 2 - IRI Rules"
           variant="outlined"
@@ -496,7 +634,17 @@ const ComplianceChecker = () => {
           multiline
           rows={4}
           defaultValue={s2}
+          onChange={handleSection2Change}
         />
+        {section2Changed && (
+          <Button
+            variant="contained"
+            onClick={() => saveChanges("Section2")}
+            sx={{ width: "30%", ml: "auto", display: "block" }}
+          >
+            Save
+          </Button>
+        )}
         <TextField
           label="Section 3 - Allowable Claims"
           variant="outlined"
@@ -506,7 +654,17 @@ const ComplianceChecker = () => {
           multiline
           rows={4}
           defaultValue={s3}
+          onChange={handleSection3Change}
         />
+        {section3Changed && (
+          <Button
+            variant="contained"
+            onClick={() => saveChanges("Section3")}
+            sx={{ width: "30%", ml: "auto", display: "block" }}
+          >
+            Save
+          </Button>
+        )}
         <TextField
           label="Rule Exceptions"
           variant="outlined"
@@ -516,8 +674,24 @@ const ComplianceChecker = () => {
           multiline
           rows={4}
           defaultValue={rule_exceptions}
+          onChange={handleRuleExceptionsChange}
         />
-        <Button style={{ marginBottom: "20px" }} onClick={applyExceptions}>
+        {ruleExceptionsChanged && (
+          <Button
+            variant="contained"
+            onClick={() => saveChanges("RuleExceptions")}
+            sx={{ width: "30%", ml: "auto", display: "block" }}
+          >
+            Save
+          </Button>
+        )}
+        <br />
+        <Button
+          variant="contained"
+          style={{ marginBottom: "20px" }}
+          onClick={applyExceptions}
+          //
+        >
           Apply Exceptions
         </Button>
       </Drawer>
@@ -529,13 +703,10 @@ const ComplianceChecker = () => {
       <Box
         component="main"
         sx={{
-          flexGrow: sidebarOpen ? 1 : 1,
+          flexGrow: 1,
           p: 3,
-          width: sidebarOpen ? "70%" : "100%",
-          transition: "width 0.3s",
-          //   position: "absolute", // Use absolute positioning
-          //   left: sidebarOpen ? "30%" : 0, // Adjust left based on sidebar state
-          //   top: 0,
+          width: sidebarOpen ? "50%" : "100%", // Adjust the width based on the sidebar state
+          transition: "width 0.3s ease-in-out", // Define the transition directly
         }}
       >
         <Typography variant="h2">Slynd FDA Compliance Checker</Typography>
@@ -596,14 +767,15 @@ const ComplianceChecker = () => {
         <br />
         <Button
           variant="contained"
-          onClick={handleCheckComplianceClick}
+          // onClick={handleCheckComplianceClick}
+          onClick={checkCompliance}
           style={{ m: "10px" }}
           disabled={isLoading} // Disable button when loading
         >
           {isLoading ? <CircularProgress size={24} /> : "Check Compliance"}
         </Button>
         <br />
-        {showComplianceResults && (
+        {complianceResult.results && (
           <>
             <Typography
               variant="h5"
@@ -629,29 +801,46 @@ const ComplianceChecker = () => {
               </Box>
             </Box>
             <Box>
-              {samplecomplianceResult?.map((issue, index) => (
-                <div key={issue.id} style={{ marginBottom: "10px" }}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={checked.includes(issue.id)}
-                        onChange={handleToggle(issue)}
-                      />
-                    }
-                    label={
-                      <span
-                        style={{
-                          textDecoration: checked.includes(issue.id)
-                            ? "line-through"
-                            : "none",
-                        }}
-                      >
-                        {issue.non_compliant_statement}
-                      </span>
-                    }
-                  />
-                </div>
-              ))}
+              {complianceResult.results.map((result, index) => {
+                console.log(
+                  `Rendering checkbox for statement: ${result.non_compliant_statement}, checked state:`,
+                  checked
+                );
+                return (
+                  <div key={index} style={{ marginBottom: "10px" }}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={checked.includes(
+                            result.non_compliant_statement
+                          )}
+                          onChange={handleToggle(
+                            result.non_compliant_statement
+                          )}
+                        />
+                      }
+                      label={
+                        <div>
+                          <span
+                            style={{
+                              textDecoration: checked.includes(
+                                result.non_compliant_statement
+                              )
+                                ? "line-through"
+                                : "none",
+                            }}
+                          >
+                            {result.non_compliant_statement}
+                          </span>
+                          <div style={{ marginTop: "5px" }}>
+                            <strong>Fixes:</strong> {result.fixes}
+                          </div>
+                        </div>
+                      }
+                    />
+                  </div>
+                );
+              })}
             </Box>
           </>
         )}
