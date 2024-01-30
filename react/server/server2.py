@@ -15,7 +15,7 @@ CORS(app)
 client = OpenAI()
 
 @app.route('/compliance_check', methods=['POST'])
-def get_1996_yankees_lineup():
+def compliance_check():
 
     # Get JSON data from the request
     data = request.get_json()
@@ -31,65 +31,134 @@ def get_1996_yankees_lineup():
     rule_exceptions = data.get('rule_exceptions')
 
     system_message = """
-    You are an assistant with expertise in pharmaceutical marketing compliance. 
-    Your task is to evaluate a social media post for the drug Slynd against a set of guidelines to ensure it adheres to FDA regulations, 
-    client's branding, and specific drug claims allowed. Follow these steps:
+    You are an assistant with expertise in pharmaceutical marketing compliance. Your task is to evaluate a social media post for the drug Slynd, ensuring it adheres to FDA regulations, the client's branding, and specific drug claims allowed. Here's how to proceed:
+
+    ### Steps for Evaluation:
+
+    1. **Review Post Content**: Examine the Caption and Extracted Text from the social media post.
+    2. **Cross-reference FDA Guidelines**: Match the post content against the FDA's list of Do's and Don'ts. Do's mean that if the post does include those things, then it IS COMPLIANT. Dont's means that if the post includes those things it is NOT COMPLIANT.
+    3. **Check Brand Alignment**: Ensure the language is consistent with the client's On Brand guidelines.
+    4. **Verify Claims**: Confirm that the claims made are within the allowed Branded and Allowable Claims as per the Slynd handbook.
+    5. **Detailed Assessment**: Provide a compliance assessment, citing specific guidelines sections (e.g., Do's, Don'ts, On Brand) for each non-compliant point.
+ 
     
-    Step 1: Review the Extracted Text from the post and the Caption provided by the user.
-    Step 2: Cross-reference the content with the FDA's list of Do's and Don'ts.
-    Step 3: Ensure the language aligns with the client's On Brand use cases and phrases.
-    Step 4: Verify that the claims made in the post are within the Branded and Allowable Claims from the Slynd handbook.
-    Step 5: Lastly, before providing your final feedback, take into account any Rule Exceptions that may apply.
-    Step 6: Provide a detailed assessment of the post's compliance.
-    Let's think step by step
-    
-    The assessment output should look like:
-    An array of json objects of non-compliant issues. No other words. For each failed compliance issue, including the rules/guidance it broke and from which section. The keys of the json would be: 
-    non_compliant_statement, fixes, exceptions. 
-    The non_compliant_statement is the statement that broke the stated rules and which rule it specifically broke. The fixes are what can be change for it to be compliant. Exceptions is a binary (0 or 1), if would fix a rule exception.
-    Ensure that the JSON output is accurate and strictly adheres to the specified format, without any additional text or comments. You answer MUST contain only JSON even without ```json wrap.
-    Present your answer in a JSON format with the following structure:
-{
-\"results\": [
-      {
-      \"non_compliant_statement\": \"sample text\",
-      \"fixes\": \"sample text.\",
-       \"exceptions\": 0,
-      }
-     // Add more entries as needed
-   ]
-}
     """
     
     user_message = f"""
-    Here is the social media post for Slynd:
-    \\n\\nCaption: {caption} \\n\\nExtracted Text: {extracted_text}\\n\\n
+    ### Post Content Variables:
+    - `Caption`: {caption}
+    - `Extracted Text`: {extracted_text}
     
-    FDA's list of do's and don'ts, client's brand use cases and phrases, allowable claims from the Slynd handbook, and rule exceptions are provided as reference.
+    
+~~
+   
+    ### Guidelines Reference:
+    - `FDA Do's and Don'ts`: A list of regulatory guidelines.
+    - `On Brand`: Client-specific branding guidelines.
+    - `Branded and Allowable Claims`: Claims allowed for Slynd, as per the handbook.
+    
+    Do's: {dos}\\n\\n
+    
+    Don'ts: {donts}\\n\\n
+    
+    On Brand: {onbrand}\\n\\n 
+    
+    Branded: {suzannes_rules_1}\\n\\n
+    
+    Allowable Claims: {suzannes_rules_3}\\n\\n\\n, 
+    
+    ~~~
+    ### Output Format:
+Your response should be structured as a JSON array of objects, each representing a non-compliant issue. For multiple issues, include multiple objects within the array. Here's the structure to follow:
 
-    Please assess the compliance of this post. \\n\\nc
-    
-    Do's: {dos}\\n\\nDon'ts: {donts}\\n\\nOn Brand: {onbrand}\\n\\n Branded: {suzannes_rules_1}\\n\\n,Allowable Claims: {suzannes_rules_3}\\n\\n\\n, Rule Exceptions: {rule_exceptions}
-    
-    Does {suzannes_rules_2} match {iri_input}
+```json
+{{
+  "results": [
+    {{
+      "non_compliant_statement": "Example text from the post",
+      "rule_broken": "Specific rule from the guidelines",
+      "section": "The guideline section (e.g., Do's, Don'ts, On Brand)",
+      "exception": 0
+    }}
+  ]
+}}
+```
+
+### Additional Instructions:
+- If the post is fully compliant, your JSON array should be empty.
+- Provide context or a brief explanation for why a statement is non-compliant, if not immediately obvious from the rule or section cited.
+- In cases of ambiguity or errors in the guidelines or post content, note these as a separate entry in your JSON output, specifying the nature of the ambiguity or error.
+
     
     """
     
     
     response = client.chat.completions.create(
-        # model="gpt-4-turbo-preview",
-        model="gpt-3.5-turbo-1106",
+        model="gpt-4-turbo-preview",
+        # model="gpt-3.5-turbo-1106",
         messages=[
             {"role": "system", "content": system_message},
             {"role": "user", "content": user_message}
         ],
-        response_format={ "type": "json_object" }
+        response_format={ "type": "json_object" },
+        temperature=0
     )
+    
+      # Print the messages sent to the model
+    print("System Message:", system_message)
+    print("User Message:", user_message)
+    
+    
     try:
-        compliance_issues = response.choices[0].message.content
-        compliance_issues_json = json.loads(compliance_issues)
+        compliance_issues_json = json.loads(response.choices[0].message.content)
+        rule_exceptions = data.get('rule_exceptions')
+
+        # Logic to handle rule exceptions
+        system_message_exceptions = """
+        You are an assistant with expertise in pharmaceutical marketing compliance. Given a list of non-compliant statements and a list of rule exceptions, determine if any of the non-compliant statements would be compliant when considering the exceptions.
+        """
+
+        user_message_template = """
+        ### Non-Compliant Statement:
+        - `{non_compliant_statement}`
+
+        ### Rule Exceptions:
+        - `{rule_exceptions}`
+
+        ### Question:
+        - Would this statement be compliant if the rule exceptions are considered? Simply answer YES or NO.
+        """
+
+        for issue in compliance_issues_json['results']:
+            non_compliant_statement = issue['non_compliant_statement']
+            print(f"Checking compliance for statement: {non_compliant_statement}")
+
+            user_message = user_message_template.format(
+                non_compliant_statement=non_compliant_statement,
+                rule_exceptions=rule_exceptions
+            )
+            print(f"Generated user message for exception check: {user_message}")
+
+            response_exceptions = client.chat.completions.create(
+                model="gpt-4-turbo-preview",
+                messages=[
+                    {"role": "system", "content": system_message_exceptions},
+                    {"role": "user", "content": user_message}
+                ],
+                # response_format={"type": "json_object"},
+                temperature=0
+            )
+            print(f"Received response for exception check: {response_exceptions.choices[0].message.content}")
+
+            if response_exceptions.choices[0].message.content.lower() == 'yes':
+                issue['exception'] = 1
+                print(f"Statement marked as an exception: {non_compliant_statement}")
+
+        print("Finished checking all statements for exceptions.")
+        # Return the updated compliance_issues_json with exceptions handled
         return make_response(jsonify(compliance_issues_json), 200)
     except Exception as e:
+        print(f"An error occurred: {str(e)}")
         return make_response(jsonify(error=str(e)), 500)
 
 if __name__ == "__main__":

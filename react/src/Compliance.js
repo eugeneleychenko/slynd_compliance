@@ -20,6 +20,7 @@ import {
   ListItemIcon,
   ListItemText,
   Checkbox,
+  Divider,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
@@ -95,28 +96,31 @@ const ComplianceChecker = () => {
   const [section2Changed, setSection2Changed] = useState(false);
   const [section3Changed, setSection3Changed] = useState(false);
   const [ruleExceptionsChanged, setRuleExceptionsChanged] = useState(false);
+  const [containsIRI, setContainsIRI] = useState(false);
+  const [containsLogoAndGenericName, setContainsLogoAndGenericName] =
+    useState(false);
 
   useEffect(() => {
-    setCompliancePercentage(checked.length / complianceResult.length);
+    setCompliancePercentage(checked.length / complianceResult.results?.length);
   }, [checked]);
 
-  const handleCheckComplianceClick = () => {
-    setIsLoading(true);
-    setShowComplianceResults(false); // Initially hide the results
+  // const handleCheckComplianceClick = () => {
+  //   setIsLoading(true);
+  //   setShowComplianceResults(false); // Initially hide the results
 
-    setTimeout(() => {
-      setIsLoading(false);
-      setShowComplianceResults(true); // Show the results after 5 seconds
-    }, 5000);
-  };
+  //   setTimeout(() => {
+  //     setIsLoading(false);
+  //     setShowComplianceResults(true); // Show the results after 5 seconds
+  //   }, 5000);
+  // };
 
   const handleDrawerToggle = () => {
     setSidebarOpen((prevSidebarOpen) => !prevSidebarOpen);
   };
 
   const handleToggle = (nonCompliantStatement) => () => {
-    console.log("Toggling statement:", nonCompliantStatement);
-    console.log("Current checked state before toggle:", checked);
+    // console.log("Toggling statement:", nonCompliantStatement);
+    // console.log("Current checked state before toggle:", checked);
     const currentIndex = checked.indexOf(nonCompliantStatement);
     const newChecked = [...checked];
 
@@ -130,9 +134,9 @@ const ComplianceChecker = () => {
     console.log("New checked state after toggle:", newChecked);
   };
 
-  const calculateCompliancePercentage = () => {
-    return checked.length / complianceResult.length;
-  };
+  // const calculateCompliancePercentage = () => {
+  //   return checked.length / complianceResult.length;
+  // };
 
   useEffect(() => {
     fetch(
@@ -205,10 +209,9 @@ const ComplianceChecker = () => {
       }
       const result = await response.json();
       console.log("result", result);
-      console.log("Type of result:", typeof result);
 
       setComplianceResult(result);
-      console.log("Type of complianceResult:", typeof complianceResult);
+      console.log("complianceResult", complianceResult);
     } catch (error) {
       console.error("There was an error!", error);
     } finally {
@@ -250,6 +253,40 @@ const ComplianceChecker = () => {
   const handleRuleExceptionsChange = (event) => {
     setRuleExceptionsState(event.target.value);
     setRuleExceptionsChanged(true);
+  };
+
+  const handleContainsIRIChange = (event) => {
+    setContainsIRI(event.target.checked);
+    const ruleToAdd = "Link to full risk information is included";
+
+    if (event.target.checked) {
+      setRuleExceptionsState((prevState) =>
+        prevState.includes(ruleToAdd)
+          ? prevState
+          : prevState + "\n\n" + ruleToAdd
+      );
+    } else {
+      setRuleExceptionsState((prevState) =>
+        prevState.replace("\n\n" + ruleToAdd, "")
+      );
+    }
+  };
+
+  const handleContainsLogoAndGenericNameChange = (event) => {
+    setContainsLogoAndGenericName(event.target.checked);
+    const ruleToAdd = "Contains the Slynd logo and generic name";
+
+    if (event.target.checked) {
+      setRuleExceptionsState((prevState) =>
+        prevState.includes(ruleToAdd)
+          ? prevState
+          : prevState + "\n\n" + ruleToAdd
+      );
+    } else {
+      setRuleExceptionsState((prevState) =>
+        prevState.replace("\n\n" + ruleToAdd, "")
+      );
+    }
   };
 
   // Add a generic save function (you'll need to implement the actual save logic)
@@ -465,7 +502,7 @@ const ComplianceChecker = () => {
 3. **Eligibility for Prescription:** Avoid assuming all consumers can get a prescription.
   - Example: Replace 'Get a prescription' with 'Get evaluated for a prescription.'
 
-4. **Superiority Claims:** Only make superiority claims about the drug's composition, not its accessibility or delivery method.
+4. **Superiority Claims:** Only make superiority claims about the drug's accessibility or delivery method, not composition.
   - Example: Instead of 'Its about time you consider that upgrade,' use 'Its about time to consider Slynd.'
 
 5. **24-Hour Missed Pill Window:** Always pair mentions of the 24-hour missed pill window with the importance of taking the pill at the same time every day.
@@ -500,7 +537,8 @@ const ComplianceChecker = () => {
    - Example: 'Spotting or unscheduled bleeding is a common side effect.'
 `;
 
-  const rule_exceptions = `1. You are allowed to talk about the convenience of obtaining Slynd; wheter it's not needing to spend time at the pharmacy or not needing to take blood pressure tests. This is not considered a benefit and therefore doesn't need to have a referencing risk.`;
+  const rule_exceptions = `1. You are allowed to talk about the convenience of obtaining Slynd; wheter it's not needing to spend time at the pharmacy or not needing to take blood pressure tests. This is not considered a benefit and therefore doesn't need to have a referencing risk.
+  2. Talking about how Slynd doesn't contain estrogen is not a superiority claim.`;
 
   const [FDA_DoState, setFDA_DoState] = useState(FDA_Do); // Set default value to existing FDA_Do variable
 
@@ -673,7 +711,7 @@ const ComplianceChecker = () => {
           placeholder="Enter Rule Exceptions"
           multiline
           rows={4}
-          defaultValue={rule_exceptions}
+          value={RuleExceptionsState}
           onChange={handleRuleExceptionsChange}
         />
         {ruleExceptionsChanged && (
@@ -762,6 +800,24 @@ const ComplianceChecker = () => {
               multiline
               maxRows={4}
             />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={containsIRI}
+                  onChange={handleContainsIRIChange}
+                />
+              }
+              label="Contains IRI"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={containsLogoAndGenericName}
+                  onChange={handleContainsLogoAndGenericNameChange}
+                />
+              }
+              label="Contains Slynd logo and Generic Name"
+            />
           </AccordionDetails>
         </Accordion>
         <br />
@@ -802,12 +858,12 @@ const ComplianceChecker = () => {
             </Box>
             <Box>
               {complianceResult.results.map((result, index) => {
-                console.log(
-                  `Rendering checkbox for statement: ${result.non_compliant_statement}, checked state:`,
-                  checked
-                );
                 return (
-                  <div key={index} style={{ marginBottom: "10px" }}>
+                  <div
+                    key={index}
+                    style={{ marginBottom: "10px", textAlign: "left" }}
+                  >
+                    <Divider />
                     <FormControlLabel
                       control={
                         <Checkbox
@@ -821,6 +877,7 @@ const ComplianceChecker = () => {
                       }
                       label={
                         <div>
+                          <br />
                           <span
                             style={{
                               textDecoration: checked.includes(
@@ -830,10 +887,15 @@ const ComplianceChecker = () => {
                                 : "none",
                             }}
                           >
+                            <strong>Post Copy:</strong>{" "}
                             {result.non_compliant_statement}
                           </span>
+
                           <div style={{ marginTop: "5px" }}>
-                            <strong>Fixes:</strong> {result.fixes}
+                            <strong>Rule Broken:</strong> {result.rule_broken}
+                          </div>
+                          <div style={{ marginTop: "5px" }}>
+                            <strong>Section:</strong> {result.section}
                           </div>
                         </div>
                       }
