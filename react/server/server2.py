@@ -31,7 +31,8 @@ def compliance_check():
     rule_exceptions = data.get('rule_exceptions')
 
     system_message = """
-    You are an assistant with expertise in pharmaceutical marketing compliance. Your task is to evaluate a social media post for the drug Slynd, ensuring it adheres to FDA regulations, the client's branding, and specific drug claims allowed. Here's how to proceed:
+    You are an assistant with expertise in pharmaceutical marketing compliance. Your task is to evaluate a social media post for the drug Slynd (an estrogen-free birth control pill), 
+    ensuring it adheres to FDA regulations, the client's branding, and specific drug claims allowed. Here's how to proceed:
 
     ### Steps for Evaluation:
 
@@ -40,6 +41,7 @@ def compliance_check():
     3. **Check Brand Alignment**: Ensure the language is consistent with the client's On Brand guidelines.
     4. **Verify Claims**: Confirm that the claims made are within the allowed Branded and Allowable Claims as per the Slynd handbook.
     5. **Detailed Assessment**: Provide a compliance assessment, citing specific guidelines sections (e.g., Do's, Don'ts, On Brand) for each non-compliant point.
+    6. 
  
     
     """
@@ -69,7 +71,7 @@ def compliance_check():
     
     ~~~
     ### Output Format:
-Your response should be structured as a JSON array of objects, each representing a non-compliant issue. For multiple issues, include multiple objects within the array. Here's the structure to follow:
+Your response should be structured as a JSON array of objects, each representing a non-compliant issue. Only if you are sure that there is an issue, then include it. Otherwise be more forgiving. For multiple issues, include multiple objects within the array. Here's the structure to follow:
 
 ```json
 {{
@@ -78,7 +80,9 @@ Your response should be structured as a JSON array of objects, each representing
       "non_compliant_statement": "Example text from the post",
       "rule_broken": "Specific rule from the guidelines",
       "section": "The guideline section (e.g., Do's, Don'ts, On Brand)",
-      "exception": 0
+      "exception": 0,
+      "certainty": "A number between 0 and 100, of how certain you are that this post statement is not compliant. Closer to 0 means NOT VERY SURE. Closer to 100 means you are very certain that this feedback is for a non-compliant post." ,
+      "certainty_reason": "Reason for the certainty number. You can cite rules, post content, or anything else for your justification. This should be at maximium 3 sentences."
     }}
   ]
 }}
@@ -115,7 +119,7 @@ Your response should be structured as a JSON array of objects, each representing
 
         # Logic to handle rule exceptions
         system_message_exceptions = """
-        You are an assistant with expertise in pharmaceutical marketing compliance. Given a list of non-compliant statements and a list of rule exceptions, determine if any of the non-compliant statements would be compliant when considering the exceptions.
+        You are an assistant with expertise in pharmaceutical marketing compliance. You are evaluating social media posts for a drug called Slynd. Given a list of non-compliant statements and a list of rule exceptions, determine if any of the non-compliant statements would be compliant when considering the exceptions.
         """
 
         user_message_template = """

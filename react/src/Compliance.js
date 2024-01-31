@@ -15,12 +15,9 @@ import {
   FormControl,
   FormControlLabel,
   CircularProgress,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   Checkbox,
   Divider,
+  Slider,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
@@ -35,11 +32,12 @@ const ComplianceChecker = () => {
   const [iri, setIRI] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [checked, setChecked] = useState([]);
+  const [certaintyThreshold, setCertaintyThreshold] = useState(70);
   const samplecomplianceResult = [
     {
       id: 1,
       non_compliant_statement:
-        "You can get Slynd (drospirenone) online! Why? Because no estrogen = no blood pressure check! This line fails to comply with the FDA's Do's and Don'ts as it posts benefits without risks in the same post (Do not post benefits without risks in the same post).",
+        "You can get Slynd (drospirenone) online! Why? Because no estrogen = no blood pressure check! This line fails to comply with the FDA's Do's and Don'ts as it posts medical benefits without risks in the same post (Do not post benefits without risks in the same post).",
       fixes:
         "Ensure that both benefits and risks are included in the same post to comply with FDA regulations.",
       checked: 1,
@@ -119,8 +117,8 @@ const ComplianceChecker = () => {
   };
 
   const handleToggle = (nonCompliantStatement) => () => {
-    // console.log("Toggling statement:", nonCompliantStatement);
-    // console.log("Current checked state before toggle:", checked);
+    console.log("Toggling statement:", nonCompliantStatement);
+    console.log("Current checked state before toggle:", checked);
     const currentIndex = checked.indexOf(nonCompliantStatement);
     const newChecked = [...checked];
 
@@ -150,7 +148,7 @@ const ComplianceChecker = () => {
 
   const applyExceptions = () => {
     const idsToCheck = complianceResult.results
-      .filter((result) => result.exceptions === 1)
+      .filter((result) => result.exception === 1)
       .map((result) => result.non_compliant_statement);
     // Add idsToCheck to the existing checked array without overwriting
     const newChecked = [...new Set([...checked, ...idsToCheck])];
@@ -211,13 +209,19 @@ const ComplianceChecker = () => {
       console.log("result", result);
 
       setComplianceResult(result);
-      console.log("complianceResult", complianceResult);
     } catch (error) {
       console.error("There was an error!", error);
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (complianceResult && complianceResult.results) {
+      console.log("complianceResult updated", complianceResult);
+      // Perform any additional actions needed when complianceResult updates
+    }
+  }, [complianceResult]); // Add complianceResult as a dependency to this effect
 
   // Add handlers to set the changed state to true when the TextField content changes
   const handleFdaDoChange = (event) => {
@@ -255,37 +259,38 @@ const ComplianceChecker = () => {
     setRuleExceptionsChanged(true);
   };
 
+  const handleCertaintyThresholdChange = (event, newValue) => {
+    setCertaintyThreshold(newValue);
+  };
+
   const handleContainsIRIChange = (event) => {
     setContainsIRI(event.target.checked);
     const ruleToAdd = "Link to full risk information is included";
 
     if (event.target.checked) {
-      setRuleExceptionsState((prevState) =>
+      setCreativeCopy((prevState) =>
         prevState.includes(ruleToAdd)
           ? prevState
           : prevState + "\n\n" + ruleToAdd
       );
     } else {
-      setRuleExceptionsState((prevState) =>
-        prevState.replace("\n\n" + ruleToAdd, "")
-      );
+      setCreativeCopy((prevState) => prevState.replace("\n\n" + ruleToAdd, ""));
     }
   };
 
   const handleContainsLogoAndGenericNameChange = (event) => {
     setContainsLogoAndGenericName(event.target.checked);
-    const ruleToAdd = "Contains the Slynd logo and generic name";
+    const ruleToAdd =
+      "Contains the Slynd logo, generic name, and dosage form and quantitative info.";
 
     if (event.target.checked) {
-      setRuleExceptionsState((prevState) =>
+      setCreativeCopy((prevState) =>
         prevState.includes(ruleToAdd)
           ? prevState
           : prevState + "\n\n" + ruleToAdd
       );
     } else {
-      setRuleExceptionsState((prevState) =>
-        prevState.replace("\n\n" + ruleToAdd, "")
-      );
+      setCreativeCopy((prevState) => prevState.replace("\n\n" + ruleToAdd, ""));
     }
   };
 
@@ -341,9 +346,9 @@ const ComplianceChecker = () => {
   Ensure private off-label responses are truthful, non-misleading, accurate and balanced
   `;
 
-  const FDA_dont = `Do not post benefits without risks in the same post
+  const FDA_dont = `Do not post medical benefits without risks in the same post
   Do not bury or downplay risk information
-  Do not make promotional claims in hyperlinks
+
   Do not omit dosage form and quantitative information
   Do not use misleading abbreviations or symbols
   Correct misinformation fully and continue monitoring after correcting once
@@ -356,8 +361,8 @@ const ComplianceChecker = () => {
   Do not provide any off-label information publicly
   Sales/marketing personnel should not be involved in responding to off-label information requests
   Do not link to promotional info or websites in public responses. Only link to FDA-approved labeling
-  Use scientific, non-promotional tone in public responses
-  Do not respond publicly to general questions not specifically naming your drug
+  
+  
   Do not direct users to promotional URLs for off-label information. Use neutral URLs.
   `;
 
@@ -515,7 +520,7 @@ const ComplianceChecker = () => {
 8. **Subjective Language:** Use subjective language when discussing birth control choices.
   - Example: Change 'Age, BMI, and heart rate are factors that impact birth control choice' to 'Age, BMI, and heart rate might be factors you consider when choosing birth control.'
 
-9. **Focus on Slynd:** Shift claims from being about other birth controls to being specifically about Slynd.
+9. Shift claims from being about other birth controls to being specifically about Slynd.
   - Example: Instead of 'Other birth controls have not been proven effective for high BMI women,' say 'For women with higher BMI, Slynd is effective with no dose adjustment.'
 
 10. **Medical Team Interaction:** Do not invite customers to chat with the medical team in co-pay card advertisements to avoid making them appear as part of the sales and marketing team.
@@ -533,12 +538,19 @@ const ComplianceChecker = () => {
 
 15. **Inclusive Language:** The phrase 'kind to more kinds of bodies' is used, although not strongly endorsed by PRC, and will not be changed.
 
-16. **Describing Side Effects:** Do not say that spotting/unscheduled bleeding is 'normal'; instead, refer to it as 'common.'
+16. Only if normal bleedings is mention, Do not say that spotting/unscheduled bleeding is 'normal'; instead, refer to it as 'common.'
    - Example: 'Spotting or unscheduled bleeding is a common side effect.'
 `;
 
-  const rule_exceptions = `1. You are allowed to talk about the convenience of obtaining Slynd; wheter it's not needing to spend time at the pharmacy or not needing to take blood pressure tests. This is not considered a benefit and therefore doesn't need to have a referencing risk.
-  2. Talking about how Slynd doesn't contain estrogen is not a superiority claim.`;
+  const rule_exceptions = `1. You are allowed to talk about the convenience/speed/comfort of obtaining the drug in question; whether it's not needing to spend time at the pharmacy or not needing to take blood pressure tests. This is not considered a benefit and therefore doesn't need to have a referencing risk.
+  2. Talking about how Slynd doesn't contain estrogen is not a superiority claim.
+  3. Linking back to the website is allowed.
+  4. Slynd being Estrogen is not a superiority claim. 
+  5. Link to full risk info is not a benefit
+  6. Social media posts are not public responses.
+  7. Tips are not off-label information or superiority claims. 
+  8. Any questions in the posts are rhetorical
+  `;
 
   const [FDA_DoState, setFDA_DoState] = useState(FDA_Do); // Set default value to existing FDA_Do variable
 
@@ -582,6 +594,21 @@ const ComplianceChecker = () => {
         <Typography variant="h5" style={{ margin: "20px 0" }}>
           Rules
         </Typography>
+        <Divider />
+        <br />
+        <Typography id="certainty-threshold-slider" gutterBottom>
+          <em>Certainty Threshold</em>
+        </Typography>
+        <Slider
+          aria-labelledby="certainty-threshold-slider"
+          value={certaintyThreshold}
+          onChange={handleCertaintyThresholdChange}
+          valueLabelDisplay="auto"
+          step={1}
+          min={0}
+          max={100}
+          valueLabelFormat={(value) => `${value}%`}
+        />
         <TextField
           label="FDA Do's"
           variant="outlined"
@@ -728,7 +755,9 @@ const ComplianceChecker = () => {
           variant="contained"
           style={{ marginBottom: "20px" }}
           onClick={applyExceptions}
-          //
+          disabled={
+            !complianceResult.results || complianceResult.results.length === 0
+          }
         >
           Apply Exceptions
         </Button>
@@ -765,12 +794,30 @@ const ComplianceChecker = () => {
           </Select>
         </FormControl>
 
-        <Accordion stlye={{ mb: "10px" }}>
+        <Accordion elevation={6} style={{ mb: "10px" }}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography variant="h6" component="h2">
               <strong>Post Copy, Caption and IRI</strong>
             </Typography>
           </AccordionSummary>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={containsIRI}
+                onChange={handleContainsIRIChange}
+              />
+            }
+            label="Contains IRI"
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={containsLogoAndGenericName}
+                onChange={handleContainsLogoAndGenericNameChange}
+              />
+            }
+            label="Contains Slynd logo, Generic Name and Dosage"
+          />
           <AccordionDetails>
             <TextField
               label="Paste the copy here"
@@ -799,24 +846,6 @@ const ComplianceChecker = () => {
               onChange={(e) => setIRI(e.target.value)}
               multiline
               maxRows={4}
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={containsIRI}
-                  onChange={handleContainsIRIChange}
-                />
-              }
-              label="Contains IRI"
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={containsLogoAndGenericName}
-                  onChange={handleContainsLogoAndGenericNameChange}
-                />
-              }
-              label="Contains Slynd logo and Generic Name"
             />
           </AccordionDetails>
         </Accordion>
@@ -858,6 +887,10 @@ const ComplianceChecker = () => {
             </Box>
             <Box>
               {complianceResult.results.map((result, index) => {
+                const isStatementChecked =
+                  checked.includes(result.non_compliant_statement) ||
+                  result.certainty < certaintyThreshold;
+
                 return (
                   <div
                     key={index}
@@ -867,9 +900,7 @@ const ComplianceChecker = () => {
                     <FormControlLabel
                       control={
                         <Checkbox
-                          checked={checked.includes(
-                            result.non_compliant_statement
-                          )}
+                          checked={isStatementChecked}
                           onChange={handleToggle(
                             result.non_compliant_statement
                           )}
@@ -880,9 +911,7 @@ const ComplianceChecker = () => {
                           <br />
                           <span
                             style={{
-                              textDecoration: checked.includes(
-                                result.non_compliant_statement
-                              )
+                              textDecoration: isStatementChecked
                                 ? "line-through"
                                 : "none",
                             }}
@@ -891,11 +920,46 @@ const ComplianceChecker = () => {
                             {result.non_compliant_statement}
                           </span>
 
-                          <div style={{ marginTop: "5px" }}>
+                          <div
+                            style={{
+                              marginTop: "5px",
+                              textDecoration: isStatementChecked
+                                ? "line-through"
+                                : "none",
+                            }}
+                          >
                             <strong>Rule Broken:</strong> {result.rule_broken}
                           </div>
-                          <div style={{ marginTop: "5px" }}>
+                          <div
+                            style={{
+                              marginTop: "5px",
+                              textDecoration: isStatementChecked
+                                ? "line-through"
+                                : "none",
+                            }}
+                          >
                             <strong>Section:</strong> {result.section}
+                          </div>
+                          <div
+                            style={{
+                              marginTop: "5px",
+                              textDecoration: isStatementChecked
+                                ? "line-through"
+                                : "none",
+                            }}
+                          >
+                            <strong>Certainty:</strong> {result.certainty}%
+                          </div>
+                          <div
+                            style={{
+                              marginTop: "5px",
+                              textDecoration: isStatementChecked
+                                ? "line-through"
+                                : "none",
+                            }}
+                          >
+                            <strong>Certainty Reasoning:</strong>{" "}
+                            {result.certainty_reason}
                           </div>
                         </div>
                       }
