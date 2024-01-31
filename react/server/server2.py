@@ -3,6 +3,8 @@ from openai import OpenAI
 import os
 from dotenv import load_dotenv
 import json
+from werkzeug.middleware.proxy_fix import ProxyFix
+from asgiref.wsgi import WsgiToAsgi
 
 app = Flask(__name__)
 load_dotenv()
@@ -11,6 +13,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
+app.wsgi_app = ProxyFix(app.wsgi_app)  # Add ProxyFix middleware
 
 client = OpenAI()
 
@@ -164,6 +167,8 @@ Your response should be structured as a JSON array of objects, each representing
     except Exception as e:
         print(f"An error occurred: {str(e)}")
         return make_response(jsonify(error=str(e)), 500)
+
+asgi_app = WsgiToAsgi(app)
 
 if __name__ == "__main__":
     app.run()
