@@ -194,13 +194,16 @@ const ComplianceChecker = () => {
     };
 
     try {
-      const response = await fetch("http://0.0.0.0:8000/compliance_check", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
+      const response = await fetch(
+        "https://slynd-server.onrender.com/compliance_check",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
