@@ -86,6 +86,7 @@ Your response should be structured as a JSON array of objects, each representing
       "exception": 0,
       "certainty": "A number between 0 and 100, of how certain you are that this post statement is not compliant. Closer to 0 means NOT VERY SURE. Closer to 100 means you are very certain that this feedback is for a non-compliant post." ,
       "certainty_reason": "Reason for the certainty number. You can cite rules, post content, or anything else for your justification. This should be at maximium 3 sentences."
+      "rewrite": "A paragraph stating what would be changed for the post to be compliant and a rewrite the post to be compliant"
     }}
   ]
 }}

@@ -33,57 +33,6 @@ const ComplianceChecker = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [checked, setChecked] = useState([]);
   const [certaintyThreshold, setCertaintyThreshold] = useState(70);
-  const samplecomplianceResult = [
-    {
-      id: 1,
-      non_compliant_statement:
-        "You can get Slynd (drospirenone) online! Why? Because no estrogen = no blood pressure check! This line fails to comply with the FDA's Do's and Don'ts as it posts medical benefits without risks in the same post (Do not post benefits without risks in the same post).",
-      fixes:
-        "Ensure that both benefits and risks are included in the same post to comply with FDA regulations.",
-      checked: 1,
-    },
-    {
-      id: 2,
-      non_compliant_statement:
-        "Because Slynd doesn’t contain estrogen, there is no need for a blood pressure check!' - This line also fails to comply with the FDA's Do's and Don'ts as it implies a benefit without accompanying risk information (Do not post benefits without risks in the same post).",
-      fixes:
-        "Include serious risks, boxed warnings, and contraindications in the post as per FDA requirements.",
-      checked: 1,
-    },
-    // {
-    //   id: 3,
-    //   non_compliant_statement:
-    //     "The entire post lacks any risk information, which is a requirement (Include benefits and risks in each post)",
-    //   fixes:
-    //     "Add a link to the full risk information to comply with FDA regulations.",
-    //   checked: 0,
-    // },
-
-    {
-      id: 5,
-      non_compliant_statement:
-        "The post does not disclose serious risks like boxed warnings and contraindications (Disclose serious risks like boxed warnings and contraindications).",
-      fixes:
-        'Remove or replace the phrase "kind to more kinds of bodies" with an approved on-brand message.',
-      checked: 1,
-    },
-    {
-      id: 6,
-      non_compliant_statement:
-        "The post does not seem to follow the On Brand use cases and phrases, as it does not include any of the key phrases or messaging from the brand guidelines provided.",
-      fixes:
-        "Ensure that the logo or full drug name is included in every post.",
-      checked: 1,
-    },
-    {
-      id: 7,
-      non_compliant_statement:
-        "The post does not verify that the claims made are within the Branded and Allowable Claims from the Slynd handbook. It does not mention any of the important risk information or the most common side effects of Slynd.",
-      fixes: 'Clarify convenience claims by specifying "dosing window".',
-      checked: 0,
-    },
-  ];
-
   const [complianceResult, setComplianceResult] = useState({});
   const [compliancePercentage, setCompliancePercentage] = useState(0);
   const [showComplianceResults, setShowComplianceResults] = useState(false);
@@ -131,10 +80,6 @@ const ComplianceChecker = () => {
     setChecked(newChecked);
     console.log("New checked state after toggle:", newChecked);
   };
-
-  // const calculateCompliancePercentage = () => {
-  //   return checked.length / complianceResult.length;
-  // };
 
   useEffect(() => {
     fetch(
@@ -195,7 +140,8 @@ const ComplianceChecker = () => {
 
     try {
       const response = await fetch(
-        "https://slynd-server.onrender.com/compliance_check",
+        // "https://slynd-server.onrender.com/compliance_check",
+        "http://127.0.0.1:5000",
         {
           method: "POST",
           headers: {
@@ -963,6 +909,16 @@ const ComplianceChecker = () => {
                           >
                             <strong>Certainty Reasoning:</strong>{" "}
                             {result.certainty_reason}
+                          </div>
+                          <div
+                            style={{
+                              marginTop: "5px",
+                              textDecoration: isStatementChecked
+                                ? "line-through"
+                                : "none",
+                            }}
+                          >
+                            <strong>Rewrite:</strong> {result.rewrite}
                           </div>
                         </div>
                       }
