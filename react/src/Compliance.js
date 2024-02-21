@@ -140,8 +140,8 @@ const ComplianceChecker = () => {
 
     try {
       const response = await fetch(
-        // "https://slynd-server.onrender.com/compliance_check",
-        "http://127.0.0.1:5000",
+        "https://slynd-server.onrender.com/compliance_check",
+        // "http://127.0.0.1:5000",
         {
           method: "POST",
           headers: {
